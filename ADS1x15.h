@@ -183,7 +183,11 @@ protected:
   int16_t   readADC(chan_t chan, adsVR_t voltageRange, adsDR_t dataRate);
   float		readADC_V(chan_t chan, adsVR_t voltageRange, adsDR_t dataRate);
   void      startComparator_SingleEnded(chan_t chan, adsVR_t voltageRange, adsDR_t dataRate, int16_t threshold);
-  uint16_t   getLastConversionResults();
+  uint16_t  getLastConversionResults();
+  float     getLastConversionResults_V(adsVR_t voltageRange);
+  void      startConversation(chan_t chan, adsVR_t voltageRange, adsDR_t dataRate);
+  int       calcConversationDelay(adsDR_t dataRate);
+  int       getConversationDelay();
 
  private:
   uint16_t  readRegister(uint8_t i2cAddress, uint8_t reg);

@@ -40,6 +40,9 @@ void ADS1015::writeRegister(uint8_t i2cAddress, uint8_t reg, uint16_t value) {
   cmd[1] = (char)(value>>8);
   cmd[2] = (char)(value & 0xFF);
   int I2Cres = m_i2c->write(i2cAddress, cmd, 3); 
+  if(I2Cres){
+	  printf("ADS1x15 i2c error\r\n");
+  }
 //   printf("adc i2c: %d i2C addr: %x\r\n", I2Cres, i2cAddress);
 }
 
@@ -82,20 +85,7 @@ ADS1115::ADS1115(I2C* i2c, uint8_t i2cAddress)
   m_i2c = i2c;
 }
 
-/**************************************************************************/
-/*! 
-    @brief	Reads the A2D conversion result, measuring depending on chan parameter either
-			the single chan  voltage or the differential voltage between the P (AIN_i) and N (AIN_j) inputs.
-			Generates a signed value since the difference can be either positive or negative.
-
-			The +/-6.144V and +/-4.096V settings express the full-scale range of the ADC scaling.
-			In no event should more than VDD + 0.3V be applied to this device
-
-	@return Count
-*/
-/**************************************************************************/
-int16_t ADS1015::readADC(chan_t chan, adsVR_t voltageRange, adsDR_t dataRate)
-{
+void ADS1015::startConversation(chan_t chan, adsVR_t voltageRange, adsDR_t dataRate){
 	// Prepare Config Register
 	uint16_t config = ADS1015_REG_CONFIG_OS_SINGLE    | // Begin a single conversion (when in power-down mode)
 					ADS1015_REG_CONFIG_CQUE_NONE    | // Disable the comparator (default val)
@@ -118,82 +108,69 @@ int16_t ADS1015::readADC(chan_t chan, adsVR_t voltageRange, adsDR_t dataRate)
 
 	// TODO: Modify to alternatively use the RDY (EOC) pin instead of waiting. Maybe also use interrupt and continuous mode
 
+}
+
+int ADS1015::calcConversationDelay(adsDR_t dataRate){
 	if (m_bitShift == 4) // ADS1015
-		switch (dataRate) {
-			case ADS1015_DR_128SPS:
-				m_conversionDelay = 1000000 / 128;
-				break;
-			case ADS1015_DR_250SPS:
-				m_conversionDelay = 1000000 / 250;
-				break;
-			case ADS1015_DR_490SPS:
-				m_conversionDelay = 1000000 / 490;
-				break;
-			case ADS1015_DR_920SPS:
-				m_conversionDelay = 1000000 / 920;
-				break;
-			case ADS1015_DR_1600SPS:
-				m_conversionDelay = 1000000 / 1600;
-				break;
-			case ADS1015_DR_2400SPS:
-				m_conversionDelay = 1000000 / 2400;
-				break;
-			case ADS1015_DR_3300SPS:
-				m_conversionDelay = 1000000 / 3300;
-				break;
-		}
-	else // ADS1115
-		switch (dataRate) {
-			case ADS1115_DR_8SPS:
-				m_conversionDelay = 1000000 / 8;
-				break;
-			case ADS1115_DR_16SPS:
-				m_conversionDelay = 1000000 / 16;
-				break;
-			case ADS1115_DR_32SPS:
-				m_conversionDelay = 1000000 / 32;
-				break;
-			case ADS1115_DR_64SPS:
-				m_conversionDelay = 1000000 / 64;
-				break;
-			case ADS1115_DR_128SPS:
-				m_conversionDelay = 1000000 / 128;
-				break;
-			case ADS1115_DR_250SPS:
-				m_conversionDelay = 1000000 / 250;
-				break;
-			case ADS1115_DR_475SPS:
-				m_conversionDelay = 1000000 / 475;
-				break;
-			case ADS1115_DR_860SPS:
-				m_conversionDelay = 1000000 / 860;
-				break;
-		}
+	switch (dataRate) {
+		case ADS1015_DR_128SPS:
+			m_conversionDelay = 1000000 / 128;
+			break;
+		case ADS1015_DR_250SPS:
+			m_conversionDelay = 1000000 / 250;
+			break;
+		case ADS1015_DR_490SPS:
+			m_conversionDelay = 1000000 / 490;
+			break;
+		case ADS1015_DR_920SPS:
+			m_conversionDelay = 1000000 / 920;
+			break;
+		case ADS1015_DR_1600SPS:
+			m_conversionDelay = 1000000 / 1600;
+			break;
+		case ADS1015_DR_2400SPS:
+			m_conversionDelay = 1000000 / 2400;
+			break;
+		case ADS1015_DR_3300SPS:
+			m_conversionDelay = 1000000 / 3300;
+			break;
+	}
+else // ADS1115
+	switch (dataRate) {
+		case ADS1115_DR_8SPS:
+			m_conversionDelay = 1000000 / 8;
+			break;
+		case ADS1115_DR_16SPS:
+			m_conversionDelay = 1000000 / 16;
+			break;
+		case ADS1115_DR_32SPS:
+			m_conversionDelay = 1000000 / 32;
+			break;
+		case ADS1115_DR_64SPS:
+			m_conversionDelay = 1000000 / 64;
+			break;
+		case ADS1115_DR_128SPS:
+			m_conversionDelay = 1000000 / 128;
+			break;
+		case ADS1115_DR_250SPS:
+			m_conversionDelay = 1000000 / 250;
+			break;
+		case ADS1115_DR_475SPS:
+			m_conversionDelay = 1000000 / 475;
+			break;
+		case ADS1115_DR_860SPS:
+			m_conversionDelay = 1000000 / 860;
+			break;
+	}
+	return m_conversionDelay;
+}
 
-	// // Wait for the conversion to complete
-	wait_us(m_conversionDelay+2000);
-
-	// Read the conversion results
-	uint16_t res = readRegister(m_i2cAddress, ADS1015_REG_POINTER_CONVERT) >> m_bitShift;
-	if (m_bitShift == 0)
-	{
-	return (int16_t)res;
-	}
-	else
-	{
-	// Shift 12-bit results right 4 bits for the ADS1015,
-	// making sure we keep the sign bit intact
-	if (res > 0x07FF)
-	{
-	  // negative number - extend the sign to 16th bit
-	  res |= 0xF000;
-	}
-	return (int16_t)res;
-	}
+int ADS1015::getConversationDelay(){
+	return m_conversionDelay;
 }
 
 /**************************************************************************/
-/*!
+/*! 
     @brief	Reads the A2D conversion result, measuring depending on chan parameter either
 			the single chan  voltage or the differential voltage between the P (AIN_i) and N (AIN_j) inputs.
 			Generates a signed value since the difference can be either positive or negative.
@@ -201,11 +178,21 @@ int16_t ADS1015::readADC(chan_t chan, adsVR_t voltageRange, adsDR_t dataRate)
 			The +/-6.144V and +/-4.096V settings express the full-scale range of the ADC scaling.
 			In no event should more than VDD + 0.3V be applied to this device
 
-	@return Voltage
+	@return Count
 */
 /**************************************************************************/
-float ADS1015::readADC_V(chan_t chan, adsVR_t voltageRange, adsDR_t dataRate)
+int16_t ADS1015::readADC(chan_t chan, adsVR_t voltageRange, adsDR_t dataRate)
 {
+	this->startConversation(chan, voltageRange, dataRate);
+	// // Wait for the conversion to complete
+	this->calcConversationDelay(dataRate);
+	wait_us(m_conversionDelay+2000);
+
+	return this->getLastConversionResults();
+
+}
+
+float ADS1015::getLastConversionResults_V(adsVR_t voltageRange){
 float bit_V = 0.;
 
 	//											ADS1015		ADS1115
@@ -236,8 +223,29 @@ float bit_V = 0.;
 			bit_V = 0.125e-3f * powf(2, -4 + m_bitShift);
 			break;
 	}
+	return (this->getLastConversionResults() * bit_V);
+}
 
-	return (readADC(chan, voltageRange, dataRate) * bit_V);
+/**************************************************************************/
+/*!
+    @brief	Reads the A2D conversion result, measuring depending on chan parameter either
+			the single chan  voltage or the differential voltage between the P (AIN_i) and N (AIN_j) inputs.
+			Generates a signed value since the difference can be either positive or negative.
+
+			The +/-6.144V and +/-4.096V settings express the full-scale range of the ADC scaling.
+			In no event should more than VDD + 0.3V be applied to this device
+
+	@return Voltage
+*/
+/**************************************************************************/
+float ADS1015::readADC_V(chan_t chan, adsVR_t voltageRange, adsDR_t dataRate)
+{
+	this->startConversation(chan, voltageRange, dataRate);
+	// // Wait for the conversion to complete
+	this->calcConversationDelay(dataRate);
+	wait_us(m_conversionDelay+2000);
+
+	return this->getLastConversionResults_V(voltageRange);
 }
 
 /**************************************************************************/
@@ -285,7 +293,7 @@ void ADS1015::startComparator_SingleEnded(chan_t chan, adsVR_t voltageRange, ads
 uint16_t ADS1015::getLastConversionResults()
 {
   // Wait for the conversion to complete
-  wait_us(m_conversionDelay);
+//   wait_us(m_conversionDelay);
 
   // Read the conversion results
   uint16_t res = readRegister(m_i2cAddress, ADS1015_REG_POINTER_CONVERT) >> m_bitShift;
