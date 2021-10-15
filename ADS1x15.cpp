@@ -57,7 +57,7 @@ void ADS1115::startConversation(chan_t chan)
 	writeRegister(m_i2cAddress, ADS1115_REG_POINTER_CONFIG, config);
 }
 
-adsVR_t ADS1115::setVoltageRangeByVal(float val)
+adsVR_t ADS1115::setVoltageRangeByVal(double val)
 {
 	if (val < 0)
 	{
@@ -125,29 +125,29 @@ void ADS1115::setVoltageRange(adsVR_t voltageRange)
 	// }
 }
 
-float ADS1115::getVoltage(int16_t adc_val)
+double ADS1115::getVoltage(int16_t adc_val)
 {
 	switch (m_voltageRange)
 	{
 	case VR_p_m_6_144V:
-		return (float)adc_val * 6.144 / 32767.0;
+		return (double)adc_val * 6.144 / 32767.0;
 		break;
 	case VR_p_m_4_096V:
-		return (float)adc_val * 4.096 / 32767.0;
+		return (double)adc_val * 4.096 / 32767.0;
 		break;
 	case VR_p_m_2_048V:
-		return (float)adc_val * 2.048 / 32767.0;
+		return (double)adc_val * 2.048 / 32767.0;
 		break;
 	case VR_p_m_1_024V:
 		// case VR_p_m_0_512V:
 		// case VR_p_m_0_256V:
-		return (float)adc_val * 1.024 / 32767.0;
+		return (double)adc_val * 1.024 / 32767.0;
 		break;
 	case VR_p_m_0_512V:
-		return (float)adc_val * 0.512 / 32767.0;
+		return (double)adc_val * 0.512 / 32767.0;
 		break;
 	case VR_p_m_0_256V:
-		return (float)adc_val * 0.256 / 32767.0;
+		return (double)adc_val * 0.256 / 32767.0;
 		break;
 	}
 }
@@ -197,12 +197,12 @@ int16_t ADS1115::readADC(chan_t chan)
 	return this->getLastConversionResults();
 }
 
-float ADS1115::getLastConversionResults_V()
+double ADS1115::getLastConversionResults_V()
 {
 	return this->getVoltage(this->getLastConversionResults());
 }
 
-float ADS1115::readADC_V(chan_t chan)
+double ADS1115::readADC_V(chan_t chan)
 {
 	this->startConversation(chan);
 	// // Wait for the conversion to complete

@@ -97,20 +97,20 @@ class ADS1115
 public:
     ADS1115(I2C *i2c, uint8_t i2cAddress = ADS1115_ADDRESS);
     int16_t readADC(chan_t chan);
-    float readADC_V(chan_t chan);
+    double readADC_V(chan_t chan);
     void startComparator_SingleEnded(chan_t chan, int16_t threshold);
     int16_t getLastConversionResults();
-    float getLastConversionResults_V();
+    double getLastConversionResults_V();
     void startConversation(chan_t chan);
     int getConversationDelay();
-    float getVoltage(int16_t adc_val);
+    double getVoltage(int16_t adc_val);
 
     void setVoltageRange(adsVR_t voltageRange);
     void setDataRate(adsDR_t dataRate);
 
     void enableConvReadyPin(uint8_t convCnt);
 
-    adsVR_t setVoltageRangeByVal(float val);
+    adsVR_t setVoltageRangeByVal(double val);
 
 private:
     // Instance-specific properties
